@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль пользователя</title>
+    <style>
+        /* Стили для кнопок и инпутов */
+        .profile-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .profile-container img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            cursor: pointer; /* Указатель при наведении на аватар */
+        }
+        .works-list {
+            margin-top: 20px;
+        }
+        .work-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+        .logout-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .dark-theme {
+            background-color: #121212;
+            color: #ffffff;
+        }
+        .dark-theme .work-item {
+            border-color: #555;
+        }
+
+        /* Стиль для редактируемых полей */
+        .edit-mode input {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        .edit-mode p {
+            display: none;
+        }
+    </style>
+</head>
+<body class="{% if profile.user.profile.is_dark_theme %}dark-theme{% endif %}">
+    <div class="profile-container">
+        {% if profile.user == request.user %}
+            <!-- Only show editing options for the logged-in user -->
+            <form id="avatar-form" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <label for="avatar-input">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="Аватар" id="avatar-preview">
+                    {% else %}
+                        <img src="{{ MEDIA_URL }}default_avatar.png" alt="Аватар" id="avatar-preview">
+                    {% endif %}
+                </label>
+                <input type="file" id="avatar-input" name="avatar" style="display: none;">
+            </form>
+        {% endif %}
+
+        <div class="profile-info">
+            <div class="username-section">
+                <p id="username-display">{{ profile.user.username }}</p>
+                {% if profile.user == request.user %}
+                    <input type="text" id="username-input" value="{{ profile.user.username }}" style="display:none;">
+                {% endif %}
+            </div>
+            <!-- Display email and other details, only editable for the logged-in user -->
+            <div class="email-section">
+                <p id="email-display">{{ profile.work_email }}</p>
+                {% if profile.user == request.user %}
+                    <input type="email" id="email-input" value="{{ profile.work_email }}" style="display:none;">
+                {% endif %}
+            </div>
+        </div>
+
+        {% if profile.user == request.user %}
+            <button id="edit-btn" onclick="toggleEditMode()">Изменить</button>
+            <button id="save-btn" onclick="saveChanges()" style="display: none;">Сохранить изменения</button>
+        {% endif %}
+
+        <div class="profile-info">
+            <div class="likes-info">
+                <p>Общее количество лайков: {{ total_likes }}</p>
+            </div>
+            <div class="dislikes-info">
+                <p>Общее количество дизлайков: {{ total_dislikes }}</p>
+            </div>
+        </div>
+
+        {% if profile.user == request.user %}
+            <a href="{% url 'logout' %}" class="logout-btn">Выйти из аккаунта</a>
+        {% endif %}
+    </div>
+
+    <!-- Work items for the current user -->
+<div class="works-list">
+    <h3>Работы пользователя:</h3>
+    {% for work in works %}
+        <div class="work-item">
+            <h4>{{ work.title }}</h4>
+            {% if work.image %}
+                <img src="{{ work.image.url }}" alt="{{ work.title }}" width="200">
+            {% endif %}
+            <p>{{ work.description }}</p>
+            {% if profile.user == request.user %}
+                <form method="POST" action="{% url 'delete_work' work.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-btn" style="background-color: red; color: white; padding: 5px 10px; border: none; border-radius: 5px;">
+                        Удалить
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const usernameInput = document.getElementById('username-input');
+            const emailInput = document.getElementById('email-input');
+            const avatarInput = document.getElementById('avatar-input');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const successMessage = document.getElementById('success-message');
+
+            // Включение редактирования по клику
+            usernameInput.addEventListener('click', () => enableEditing(usernameInput));
+            emailInput.addEventListener('click', () => enableEditing(emailInput));
+
+            function enableEditing(input) {
+                input.readOnly = false;
+                input.focus();
+            }
+
+            // Сохранение данных по Enter
+            [usernameInput, emailInput].forEach(input => {
+                input.addEventListener('keydown', event => {
+                    if (event.key === 'Enter') {
+                        saveProfileChanges(input.id, input.value);
+                        input.readOnly = true;
+                    }
+                });
+            });
+
+            function saveProfileChanges(field, value) {
+                const formData = new FormData();
+                formData.append(field, value);
+
+                fetch('{% url "update_profile" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        successMessage.style.display = 'block';
+                        setTimeout(() => successMessage.style.display = 'none', 3000);
+                    }
+                });
+            }
+
+            // Обработка загрузки аватара
+            avatarInput.addEventListener('change', () => {
+                const formData = new FormData();
+                formData.append('avatar', avatarInput.files[0]);
+
+                fetch('{% url "update_profile" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        avatarPreview.src = URL.createObjectURL(avatarInput.files[0]);
+                    } else {
+                        alert('Ошибка загрузки аватара');
+                    }
+                });
+            });
+        });
+                function toggleEditMode() {
+            const usernameDisplay = document.getElementById('username-display');
+            const emailDisplay = document.getElementById('email-display');
+            const usernameInput = document.getElementById('username-input');
+            const emailInput = document.getElementById('email-input');
+            const editBtn = document.getElementById('edit-btn');
+            const saveBtn = document.getElementById('save-btn');
+
+            // Проверка текущего состояния редактирования
+            if (usernameDisplay.style.display === 'none') {
+                // Возвращаем в режим отображения
+                usernameDisplay.style.display = 'block';
+                emailDisplay.style.display = 'block';
+                usernameInput.style.display = 'none';
+                emailInput.style.display = 'none';
+                editBtn.innerText = 'Изменить';
+                saveBtn.style.display = 'none';
+            } else {
+                // Переход в режим редактирования
+                usernameDisplay.style.display = 'none';
+                emailDisplay.style.display = 'none';
+                usernameInput.style.display = 'inline-block';
+                emailInput.style.display = 'inline-block';
+                editBtn.innerText = 'Отменить';
+                saveBtn.style.display = 'inline-block';
+            }
+        }
+
+        function saveChanges() {
+            const username = document.getElementById('username-input').value;
+            const email = document.getElementById('email-input').value;
+
+            // Отправляем данные через AJAX
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('email', email);
+
+            fetch('{% url "update_profile" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Обновляем отображаемую информацию
+                    document.getElementById('username-display').innerText = username;
+                    document.getElementById('email-display').innerText = email;
+
+                    // Переход обратно в режим отображения
+                    toggleEditMode();
+
+                    // Показать сообщение об успешных изменениях
+                    document.getElementById('success-message').style.display = 'block';
+
+                    setTimeout(() => {
+                        document.getElementById('success-message').style.display = 'none';
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при сохранении данных.');
+            });
+        }
+    </script>
+
+</body>
+</html>

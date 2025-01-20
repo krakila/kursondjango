@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ work.title }}</title>
+    <style>
+        .file-preview {
+            margin-top: 20px;
+        }
+        .file-info {
+            font-size: 16px;
+        }
+        .comment-section {
+            margin-top: 30px;
+        }
+        .comment {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            color: white;
+            background-color: #007bff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ work.title }}</h1>
+    <p>{{ work.description }}</p>
+
+    <!-- Проверка на наличие папки -->
+    {% if work.folder_path %}
+        <a href="{% url 'download_folder' work.id %}" class="btn">Скачать всю папку</a>
+    {% elif work.file %}
+        <!-- Проверка, если это изображение -->
+        {% if work.file.url|lower|slice:"-4:" in ".jpg .png .gif" %}
+            <div class="file-preview">
+                <img src="{{ work.file.url }}" alt="File Preview" width="400">
+            </div>
+            <p><a href="{{ work.file.url }}" download class="btn">Скачать изображение</a></p>
+        {% else %}
+            <!-- Если это не изображение, выводим ссылку на скачивание файла -->
+            <p><a href="{{ work.file.url }}" download class="btn">Скачать файл</a></p>
+        {% endif %}
+    {% elif work.image %}
+        <!-- Если это изображение -->
+        <div class="file-preview">
+            <img src="{{ work.image.url }}" alt="{{ work.title }}" width="400">
+        </div>
+        <p><a href="{{ work.image.url }}" download class="btn">Скачать изображение</a></p>
+    {% else %}
+        <p>Нет доступного файла.</p>
+    {% endif %}
+
+    <div class="comment-section">
+        <h3>Комментарии</h3>
+        <form method="post">
+            {% csrf_token %}
+            <textarea name="content" rows="3" required placeholder="Добавить комментарий..."></textarea><br>
+            <button type="submit">Отправить</button>
+        </form>
+
+        {% for comment in comments %}
+            <div class="comment" style="display: flex; align-items: center; margin-top: 10px;">
+                <a href="{% url 'user_profile' username=comment.user.user.username %}">
+                    <img src="{{ comment.user.avatar.url }}" alt="Avatar" width="50" height="50" style="border-radius: 50%; margin-right: 10px;">
+                </a>
+                <div>
+                    <strong><a href="{% url 'user_profile' username=comment.user.user.username %}">{{ comment.user.user.username }}</a></strong>:
+                    <p>{{ comment.content }}</p>
+                    <small>{{ comment.created_at }}</small>
+                </div>
+            </div>
+        {% empty %}
+            <p>Комментариев пока нет.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>

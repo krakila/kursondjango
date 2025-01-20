@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Стили для светлой и темной темы -->
+    <style>
+        /* Стили для светлой темы */
+        body {
+            background-color: white;
+            color: black;
+            transition: background-color 0.3s, color 0.3s; /* Плавный переход */
+        }
+
+        /* Стили для темной темы */
+        body.dark-theme {
+            background-color: #121212;
+            color: white;
+        }
+
+        /* Кнопка переключения темы */
+        #theme-toggle {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #theme-toggle:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body {% if request.COOKIES.theme == 'dark' %} class="dark-theme" {% endif %}>
+    {% block content %}{% endblock %}
+
+    <script>
+        // Переключение темы
+        const themeToggleButton = document.getElementById('theme-toggle');
+        themeToggleButton.addEventListener('click', function() {
+            document.body.classList.toggle('dark-theme');
+            const newTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+            document.cookie = `theme=${newTheme}; path=/`;  // Сохраняем в куки
+        });
+
+        // Применение сохраненной темы при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+                const [name, value] = cookie.split('=');
+                acc[name] = value;
+                return acc;
+            }, {});
+            if (cookies.theme === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+        });
+    </script>
+</body>
+</html>

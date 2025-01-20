@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta charset="UTF-8">
+    <title>Главная страница</title>
+    <style>
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 10px;
+        }
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+        }
+        .nav-bar a:hover {
+            background-color: #555;
+        }
+    </style>
+    <style>
+        .work-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .buttons button {
+            padding: 5px 10px;
+        }
+        .avatar img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <a href="{% url 'main_page' %}">Главная</a>
+        <a href="{% url 'user_profile' user.username %}">Профиль</a>
+        <a href="{% url 'profile_settings' %}">Настройки</a>
+        <a href="{% url 'storage:storage_view' %}">Хранилище</a> <!-- Новая ссылка на хранилище -->
+    </div>
+
+
+    <h1>Работы пользователей</h1>
+    <!-- Поисковая строка -->
+    <div>
+        <form method="GET" action="{% url 'main_page' %}">
+            <input type="text" name="query" placeholder="Поиск работ..." value="{{ request.GET.query }}">
+            <button type="submit">🔍 Найти</button>
+        </form>
+    </div>
+
+    <!-- Сортировка -->
+    <div>
+        <a href="?sort=date_desc">Новые</a> |
+        <a href="?sort=date_asc">Старые</a> |
+        <a href="?sort=likes">Популярные</a> |
+        <a href="?sort=user_popularity">По популярности пользователя</a>
+    </div>
+    <a href="{% url 'upload_file' %}" class="btn btn-primary mb-3">Добавить Cloud</a>
+    <!-- Отображение работ -->
+    {% for work in works %}
+    <div class="work-container">
+        <h2>{{ work.title }}</h2>
+        {% if work.image %}
+            <img src="{{ work.image.url }}" alt="{{ work.title }}" width="300">
+        {% endif %}
+        <p>{{ work.description }}</p>
+
+        <div class="buttons">
+            <a href="{% url 'view_work' work.id %}"><button>👁️ Посмотреть</button></a>
+            <a href="{% url 'report_work' work.id %}"><button>⚠️ Пожаловаться</button></a>
+            <button class="like-btn" data-work-id="{{ work.id }}">👍 Лайк</button>
+            <span id="likes-count-{{ work.id }}">{{ work.total_likes }}</span>
+            <button class="dislike-btn" data-work-id="{{ work.id }}">👎 Дизлайк</button>
+            <span id="dislikes-count-{{ work.id }}">{{ work.total_dislikes }}</span>
+        </div>
+
+        <!-- Профиль пользователя -->
+        <div class="avatar">
+            <a href="{% url 'user_profile' work.user.user.username %}">
+                <img src="{{ work.user.avatar.url }}" alt="{{ work.user.user.username }}">
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const likeButtons = document.querySelectorAll('.like-btn');  // Исправлено
+    const dislikeButtons = document.querySelectorAll('.dislike-btn');
+
+    likeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const workId = this.dataset.workId;
+            fetch(`/main/like/${workId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(`likes-count-${workId}`).textContent = data.likes;
+                document.getElementById(`dislikes-count-${workId}`).textContent = data.dislikes;
+            });
+        });
+    });
+
+    dislikeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const workId = this.dataset.workId;
+            fetch(`/main/dislike/${workId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(`likes-count-${workId}`).textContent = data.likes;
+                document.getElementById(`dislikes-count-${workId}`).textContent = data.dislikes;
+            });
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+
+</script>
