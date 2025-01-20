@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
+{% block content %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -24,7 +25,7 @@
             justify-content: center;
             align-items: center;
             border: 1px solid #ddd;
-            background-color: #f7f7f7;
+
         }
         .file-preview img {
             max-width: 100%;
@@ -52,8 +53,31 @@
             background-color: #c82333;
         }
     </style>
+        <style>
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 10px;
+        }
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+        }
+        .nav-bar a:hover {
+            background-color: #555;
+        }
+    </style>
+
 </head>
 <body>
+    <div class="nav-bar">
+        <a href="{% url 'main_page' %}">Главная</a>
+        <a href="{% url 'user_profile' user.username %}">Профиль</a>
+        <a href="{% url 'profile_settings' %}">Настройки</a>
+        <a href="{% url 'storage:storage_view' %}">Хранилище</a> <!-- Новая ссылка на хранилище -->
+    </div>
     <h1>Подробнее о файле: {{ file.title }}</h1>
 
     <div class="file-details">
@@ -96,3 +120,4 @@
     </div>
 </body>
 </html>
+{% endblock %}

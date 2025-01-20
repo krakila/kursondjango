@@ -1,5 +1,27 @@
 {% extends 'base.html' %}
 {% block content %}
+    <style>
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 10px;
+        }
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+        }
+        .nav-bar a:hover {
+            background-color: #555;
+        }
+    </style>
+    <div class="nav-bar">
+        <a href="{% url 'main_page' %}">Главная</a>
+        <a href="{% url 'user_profile' user.username %}">Профиль</a>
+        <a href="{% url 'profile_settings' %}">Настройки</a>
+        <a href="{% url 'storage:storage_view' %}">Хранилище</a> <!-- Новая ссылка на хранилище -->
+    </div>
     <h2>Настройки профиля</h2>
 
     <!-- Форма смены пароля -->

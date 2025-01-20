@@ -1,39 +1,61 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Upload File or Folder</h2>
+    <style>
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 10px;
+        }
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+        }
+        .nav-bar a:hover {
+            background-color: #555;
+        }
+    </style>
+    <div class="nav-bar">
+        <a href="{% url 'main_page' %}">Главная</a>
+        <a href="{% url 'user_profile' user.username %}">Профиль</a>
+        <a href="{% url 'profile_settings' %}">Настройки</a>
+        <a href="{% url 'storage:storage_view' %}">Хранилище</a> <!-- Новая ссылка на хранилище -->
+    </div>
+<h2>Загрузить файл или папку</h2>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div class="form-group">
-        <label for="id_title">Title</label>
+        <label for="id_title">Название</label>
         {{ form.title }}
     </div>
 
     <div class="form-group">
-        <label for="id_description">Description</label>
+        <label for="id_description">Описание</label>
         {{ form.description }}
     </div>
 
     <div class="form-group">
-        <label for="fileInput">Select File</label>
+        <label for="fileInput">Выберите файл</label>
         <input type="file" name="files" id="fileInput" multiple required disabled>
     </div>
 
     <div class="form-group">
-        <label for="folderInput">Select Folder</label>
+        <label for="folderInput">Выберите папку</label>
         <input type="file" name="files" id="folderInput" webkitdirectory multiple required disabled>
     </div>
 
     <div class="form-group">
-        <label for="uploadType">Upload Type</label>
+        <label for="uploadType">Тип загрузки</label>
         <select name="upload_type" id="uploadType">
-            <option value="file">File</option>
-            <option value="folder">Folder</option>
+            <option value="file">Файл</option>
+            <option value="folder">Папка</option>
         </select>
     </div>
 
-    <button type="submit" class="btn btn-success">Upload</button>
+    <button type="submit" class="btn btn-success">Загрузить</button>
 </form>
 
 <script>
@@ -41,7 +63,7 @@
     const folderInput = document.getElementById('folderInput');
     const uploadType = document.getElementById('uploadType');
 
-    // Enable/disable file and folder input based on upload type
+    // Включение/отключение выбора файла и папки в зависимости от типа загрузки
     uploadType.addEventListener('change', function() {
         if (this.value === 'file') {
             fileInput.disabled = false;
@@ -52,7 +74,7 @@
         }
     });
 
-    // Default to file input being enabled when the page loads
+    // По умолчанию включаем выбор файла при загрузке страницы
     uploadType.dispatchEvent(new Event('change'));
 </script>
 {% endblock %}

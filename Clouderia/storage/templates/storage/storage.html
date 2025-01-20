@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+{% extends 'base.html' %}
+{% block content %}
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -61,7 +62,7 @@
         .sort-container {
             width: 250px;
             padding: 20px;
-            background-color: #f8f9fa;
+
             border-right: 2px solid #ccc;
             height: 100vh;
             position: sticky;
@@ -179,3 +180,4 @@
     </div>
 </body>
 </html>
+{% endblock %}

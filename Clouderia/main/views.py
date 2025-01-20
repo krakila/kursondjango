@@ -205,10 +205,20 @@ def main_page(request):
         )
 
     # Сортировка
-    if sort_option == 'date_asc':
+    if sort_option == 'likes':
+        works = works.annotate(
+            like_count=Count('likes'),
+            dislike_count=Count('dislikes'),
+            has_likes=Count('likes', filter=models.Q(likes__isnull=False)),
+            has_dislikes=Count('dislikes', filter=models.Q(dislikes__isnull=False))
+        ).order_by(
+            '-like_count',            # Сначала по количеству лайков
+            'dislike_count',          # Затем по количеству дизлайков
+            models.F('like_count').desc(nulls_last=True),  # Без лайков в конце
+            models.F('dislike_count').asc(nulls_first=True)  # Дизлайки после бездействия
+        )
+    elif sort_option == 'date_asc':
         works = works.order_by('created_at')
-    elif sort_option == 'likes':
-        works = works.annotate(like_count=Count('likes')).order_by('-like_count')
     elif sort_option == 'user_popularity':
         works = works.order_by('-user__total_likes')
     else:  # По умолчанию сортируем по убыванию даты
@@ -225,7 +235,6 @@ def main_page(request):
         'query': query,
         'user_avatar': user_profile.avatar
     })
-
 
 @login_required
 def delete_work(request, work_id):
